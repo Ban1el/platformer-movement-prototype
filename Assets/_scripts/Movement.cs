@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class Movement : MonoBehaviour
 {
-    [SerializeField]
     private Rigidbody2D rb;
 
     [Header("Movement Settings")]
@@ -27,10 +26,13 @@ public class Movement : MonoBehaviour
     private float jump_force;
 
     [SerializeField]
+    private float jump_start_time;
+
+    [SerializeField]
     private float fall_multiplier = 2.5f;
 
     [SerializeField]
-    private float low_jump_multiplier = 2f;
+    private float low_jump_multiplier = 2.5f;
 
     [SerializeField]
     private Transform ground_check;
@@ -40,10 +42,18 @@ public class Movement : MonoBehaviour
 
     [SerializeField]
     private LayerMask ground_layer;
+    private float default_gravity_scale;
+    private float jump_time;
+    private bool is_jumping = false;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+    }
+
+    private void Start()
+    {
+        default_gravity_scale = rb.gravityScale;
     }
 
     private void FixedUpdate()
@@ -54,8 +64,8 @@ public class Movement : MonoBehaviour
 
     private void Update()
     {
+        Debug.Log(rb.velocity.x);
         Jump();
-        GravityChange();
     }
 
     private void HorizontalMovement()
@@ -71,7 +81,10 @@ public class Movement : MonoBehaviour
             rb.velocity += decelerationVector * Time.fixedDeltaTime;
         }
 
-        rb.velocity = Vector2.ClampMagnitude(rb.velocity, movement_speed);
+        rb.velocity = new Vector2(
+            Mathf.Clamp(rb.velocity.x, -movement_speed, movement_speed),
+            rb.velocity.y
+        );
     }
 
     private void ApplyFriction()
@@ -86,35 +99,22 @@ public class Movement : MonoBehaviour
 
     private void Jump()
     {
-        if (Input.GetKey(KeyCode.Space) && IsGrounded())
+        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
         {
+            // jump_time = jump_start_time;
+            is_jumping = true;
+            // rb.velocity = new Vector2(rb.velocity.x, jump_force);
             rb.AddForce(Vector2.up * jump_force, ForceMode2D.Impulse);
         }
 
-        // //If player is falling
-        // if (rb.velocity.y < 0)
-        // {
-        //     //The reason why we need to subtract to 1, because Unity already applying 1 multiple of the gravity.
-        //     // Multiplied by Time.deltaTime because the gravtiy is per second. We want to apply it, per frame.
-        //     rb.velocity +=
-        //         Vector2.up * Physics2D.gravity.y * (fall_multiplier - 1) * Time.deltaTime;
-        // }
-        // else if (rb.velocity.y > 0 && Input.GetKeyDown(KeyCode.Space))
-        // {
-        //     rb.velocity +=
-        //         Vector2.up * Physics2D.gravity.y * (low_jump_multiplier - 1) * Time.deltaTime;
-        // }
-    }
-
-    private void GravityChange()
-    {
+        //Gravity Change
         if (rb.velocity.y < 0)
         {
-            rb.gravityScale = 1 * fall_multiplier;
+            rb.gravityScale = default_gravity_scale * fall_multiplier;
         }
         else
         {
-            rb.gravityScale = 1;
+            rb.gravityScale = default_gravity_scale;
         }
     }
 
