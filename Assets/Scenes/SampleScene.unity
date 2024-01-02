@@ -717,8 +717,8 @@ Transform:
   m_GameObject: {fileID: 1365282484}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.1, y: -4.8, z: 0}
-  m_LocalScale: {x: 1, y: 2, z: 1}
+  m_LocalPosition: {x: 0.1, y: -4.9031, z: 0}
+  m_LocalScale: {x: 1, y: 1.7937499, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 311464564}
@@ -804,13 +804,14 @@ MonoBehaviour:
   friction_amount: 0.22
   jump_force: 13
   jump_start_time: 0.25
-  fall_multiplier: 4
+  fall_multiplier: 2
   low_jump_multiplier: 2.5
   ground_check: {fileID: 311464564}
   ground_check_radius: 0.1
   ground_layer:
     serializedVersion: 2
     m_Bits: 8
+  release_jump_vel_mod: 2
 --- !u!1 &1828062981
 GameObject:
   m_ObjectHideFlags: 0

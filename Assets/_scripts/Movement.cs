@@ -43,8 +43,12 @@ public class Movement : MonoBehaviour
     [SerializeField]
     private LayerMask ground_layer;
     private float default_gravity_scale;
-    private float jump_time;
     private bool is_jumping = false;
+
+    //Set this value larger than 1 for smoother transition
+
+    [SerializeField]
+    private float release_jump_vel_mod = 2f;
 
     private void Awake()
     {
@@ -101,15 +105,22 @@ public class Movement : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
         {
-            // jump_time = jump_start_time;
             is_jumping = true;
-            // rb.velocity = new Vector2(rb.velocity.x, jump_force);
             rb.AddForce(Vector2.up * jump_force, ForceMode2D.Impulse);
+        }
+
+        //Variable height jump
+        //To stop the player from jumping early
+        if (Input.GetKeyUp(KeyCode.Space) && is_jumping)
+        {
+            is_jumping = false;
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y / release_jump_vel_mod);
         }
 
         //Gravity Change
         if (rb.velocity.y < 0)
         {
+            is_jumping = false;
             rb.gravityScale = default_gravity_scale * fall_multiplier;
         }
         else
