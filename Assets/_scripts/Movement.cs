@@ -50,6 +50,10 @@ public class Movement : MonoBehaviour
     [SerializeField]
     private float release_jump_vel_mod = 2f;
 
+    [Header("Wall Jump Settings")]
+    [SerializeField]
+    private Transform wall_check;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -68,7 +72,6 @@ public class Movement : MonoBehaviour
 
     private void Update()
     {
-        Debug.Log(rb.velocity.x);
         Jump();
     }
 
@@ -131,15 +134,19 @@ public class Movement : MonoBehaviour
 
     private bool IsGrounded()
     {
-        RaycastHit2D hit = Physics2D.CircleCast(
+        Collider2D hit = Physics2D.OverlapCircle(
             ground_check.position,
             ground_check_radius,
-            Vector2.zero,
-            0f,
             ground_layer
         );
 
-        return hit;
+        return hit != null;
+    }
+
+    // Wall climb
+    private bool WallDetected()
+    {
+        return true;
     }
 
     private void OnDrawGizmos()
