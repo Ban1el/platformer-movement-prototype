@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
+using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine;
 
 public class Movement : MonoBehaviour
@@ -20,6 +22,7 @@ public class Movement : MonoBehaviour
     [SerializeField]
     private float friction_amount;
     private float horizontal_movement;
+    private bool is_facing_right = true;
 
     [Header("Jump Settings")]
     [SerializeField]
@@ -58,7 +61,12 @@ public class Movement : MonoBehaviour
     private LayerMask wall_layer;
 
     [SerializeField]
+    private float wall_climb_speed = 3f;
+
+    [SerializeField]
     private float slide_speed;
+
+    private bool is_climbing = false;
 
     private void Awake()
     {
@@ -73,6 +81,7 @@ public class Movement : MonoBehaviour
     private void FixedUpdate()
     {
         wall_slide();
+        wall_climb();
         HorizontalMovement();
         ApplyFriction();
     }
@@ -80,6 +89,7 @@ public class Movement : MonoBehaviour
     private void Update()
     {
         Jump();
+        FlipPlayer();
     }
 
     private void HorizontalMovement()
@@ -99,6 +109,28 @@ public class Movement : MonoBehaviour
             Mathf.Clamp(rb.velocity.x, -movement_speed, movement_speed),
             rb.velocity.y
         );
+
+        if (horizontal_movement > 0.1f)
+        {
+            is_facing_right = true;
+        }
+
+        if (horizontal_movement < -0.1f)
+        {
+            is_facing_right = false;
+        }
+    }
+
+    private void FlipPlayer()
+    {
+        if (is_facing_right)
+        {
+            transform.rotation = Quaternion.Euler(0f, 0f, 0f);
+        }
+        else
+        {
+            transform.rotation = Quaternion.Euler(0f, -180f, 0f);
+        }
     }
 
     private void ApplyFriction()
@@ -152,13 +184,40 @@ public class Movement : MonoBehaviour
 
     // Wall climb
 
-    private void wall_climb() { }
+    private void wall_climb()
+    {
+        if (Input.GetKeyDown(KeyCode.K) && WallDetected())
+        {
+            is_climbing = true;
+        }
+
+        if (Input.GetKey(KeyCode.K) && WallDetected())
+        {
+            rb.gravityScale = 0;
+            rb.velocity = new Vector2(
+                rb.velocity.x,
+                Input.GetAxisRaw("Vertical") * wall_climb_speed
+            );
+        }
+
+        if (Input.GetKeyUp(KeyCode.K))
+        {
+            is_climbing = false;
+            rb.gravityScale = default_gravity_scale;
+        }
+    }
 
     private void wall_slide()
     {
-        if (WallDetected())
+        if (WallDetected() && !is_climbing)
         {
+            rb.gravityScale = 0;
             rb.velocity = new Vector2(rb.velocity.x, -slide_speed);
+        }
+
+        if (!WallDetected() && !is_climbing)
+        {
+            rb.gravityScale = default_gravity_scale;
         }
     }
 
