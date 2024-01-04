@@ -165,7 +165,7 @@ GameObject:
   - component: {fileID: 317438097}
   - component: {fileID: 317438096}
   - component: {fileID: 317438095}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: wall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -393,7 +393,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!61 &1189069262
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -531,7 +531,7 @@ Transform:
   m_GameObject: {fileID: 1231508466}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.559, y: 0, z: 0}
+  m_LocalPosition: {x: 0.501, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -548,7 +548,7 @@ GameObject:
   - component: {fileID: 1282136025}
   - component: {fileID: 1282136024}
   - component: {fileID: 1282136023}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: wall (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -748,7 +748,7 @@ Transform:
   m_GameObject: {fileID: 1365282484}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.1, y: -4.9031, z: 0}
+  m_LocalPosition: {x: 0.1, y: -4.911, z: 0}
   m_LocalScale: {x: 1, y: 1.7937499, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -837,13 +837,18 @@ MonoBehaviour:
   jump_force: 13
   jump_start_time: 0.25
   fall_multiplier: 2
-  low_jump_multiplier: 2.5
   ground_check: {fileID: 311464564}
   ground_check_radius: 0.1
   ground_layer:
     serializedVersion: 2
     m_Bits: 8
   release_jump_vel_mod: 2
+  wall_check: {fileID: 1231508467}
+  wall_check_radius: 0.1
+  wall_layer:
+    serializedVersion: 2
+    m_Bits: 64
+  slide_speed: 5
 --- !u!1 &1828062981
 GameObject:
   m_ObjectHideFlags: 0

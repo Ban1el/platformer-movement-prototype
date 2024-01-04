@@ -32,9 +32,6 @@ public class Movement : MonoBehaviour
     private float fall_multiplier = 2.5f;
 
     [SerializeField]
-    private float low_jump_multiplier = 2.5f;
-
-    [SerializeField]
     private Transform ground_check;
 
     [SerializeField]
@@ -50,9 +47,18 @@ public class Movement : MonoBehaviour
     [SerializeField]
     private float release_jump_vel_mod = 2f;
 
-    [Header("Wall Jump Settings")]
+    [Header("Wall Settings")]
     [SerializeField]
     private Transform wall_check;
+
+    [SerializeField]
+    private float wall_check_radius;
+
+    [SerializeField]
+    private LayerMask wall_layer;
+
+    [SerializeField]
+    private float slide_speed;
 
     private void Awake()
     {
@@ -66,6 +72,7 @@ public class Movement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        wall_slide();
         HorizontalMovement();
         ApplyFriction();
     }
@@ -144,14 +151,34 @@ public class Movement : MonoBehaviour
     }
 
     // Wall climb
+
+    private void wall_climb() { }
+
+    private void wall_slide()
+    {
+        if (WallDetected())
+        {
+            rb.velocity = new Vector2(rb.velocity.x, -slide_speed);
+        }
+    }
+
     private bool WallDetected()
     {
-        return true;
+        Collider2D hit = Physics2D.OverlapCircle(
+            wall_check.position,
+            wall_check_radius,
+            wall_layer
+        );
+
+        return hit != null;
     }
 
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(ground_check.position, ground_check_radius);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(wall_check.position, wall_check_radius);
     }
 }
