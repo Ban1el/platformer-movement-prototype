@@ -49,6 +49,7 @@ public class Movement : MonoBehaviour
     private float coyote_time = 1f;
     private float coyote_time_remaining;
     private bool can_coyote_jump = false;
+    private float hang_time = 1f;
 
     //Set this value larger than 1 for smoother transition
 
@@ -76,11 +77,11 @@ public class Movement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        coyote_time_remaining = coyote_time;
     }
 
     private void Start()
     {
+        coyote_time_remaining = coyote_time;
         default_gravity_scale = rb.gravityScale;
     }
 
@@ -94,8 +95,9 @@ public class Movement : MonoBehaviour
 
     private void Update()
     {
-        CoyoteTimer();
         Jump();
+        CoyoteTimer();
+        HangTime();
         FlipPlayer();
     }
 
@@ -157,8 +159,8 @@ public class Movement : MonoBehaviour
             || Input.GetKeyDown(KeyCode.Space) && can_coyote_jump
         )
         {
-            rb.gravityScale = default_gravity_scale;
             can_coyote_jump = false;
+            rb.gravityScale = default_gravity_scale;
             is_jumping = true;
             rb.AddForce(Vector2.up * jump_force, ForceMode2D.Impulse);
         }
@@ -180,6 +182,33 @@ public class Movement : MonoBehaviour
         else
         {
             rb.gravityScale = default_gravity_scale;
+        }
+    }
+
+    private void CoyoteTimer()
+    {
+        if (!IsGrounded() && Math.Abs(rb.velocity.y) > 0f)
+        {
+            coyote_time_remaining -= Time.deltaTime;
+        }
+
+        if (!IsGrounded())
+        {
+            if (coyote_time_remaining <= 0f)
+                can_coyote_jump = false;
+        }
+        else if (IsGrounded() && !is_jumping)
+        {
+            coyote_time_remaining = coyote_time;
+            can_coyote_jump = true;
+        }
+    }
+
+    public void HangTime()
+    {
+        if (is_jumping && rb.velocity.y <= 0)
+        {
+            Debug.Log("start hangtime");
         }
     }
 
@@ -242,27 +271,6 @@ public class Movement : MonoBehaviour
         );
 
         return hit != null;
-    }
-
-    private void CoyoteTimer()
-    {
-        Debug.Log(coyote_time_remaining);
-
-        if (!IsGrounded() && Math.Abs(rb.velocity.y) > 0f)
-        {
-            coyote_time_remaining -= Time.deltaTime;
-        }
-
-        if (!IsGrounded())
-        {
-            if (coyote_time_remaining <= 0f)
-                can_coyote_jump = false;
-        }
-        else
-        {
-            coyote_time_remaining = coyote_time;
-            can_coyote_jump = true;
-        }
     }
 
     private void OnDrawGizmos()
