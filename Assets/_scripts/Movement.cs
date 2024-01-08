@@ -45,10 +45,15 @@ public class Movement : MonoBehaviour
     private float default_gravity_scale;
     private bool is_jumping = false;
 
+    [SerializeField]
+    private float coyote_time = 1f;
+    private float coyote_time_remaining;
+    private bool can_coyote_jump = false;
+
     //Set this value larger than 1 for smoother transition
 
     [SerializeField]
-    private float release_jump_vel_mod = 2f;
+    private float release_jump_vel_modifier = 2f;
 
     [Header("Wall Settings")]
     [SerializeField]
@@ -71,6 +76,7 @@ public class Movement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        coyote_time_remaining = coyote_time;
     }
 
     private void Start()
@@ -88,6 +94,7 @@ public class Movement : MonoBehaviour
 
     private void Update()
     {
+        CoyoteTimer();
         Jump();
         FlipPlayer();
     }
@@ -145,8 +152,13 @@ public class Movement : MonoBehaviour
 
     private void Jump()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        if (
+            Input.GetKeyDown(KeyCode.Space) && IsGrounded()
+            || Input.GetKeyDown(KeyCode.Space) && can_coyote_jump
+        )
         {
+            rb.gravityScale = default_gravity_scale;
+            can_coyote_jump = false;
             is_jumping = true;
             rb.AddForce(Vector2.up * jump_force, ForceMode2D.Impulse);
         }
@@ -156,7 +168,7 @@ public class Movement : MonoBehaviour
         if (Input.GetKeyUp(KeyCode.Space) && is_jumping)
         {
             is_jumping = false;
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y / release_jump_vel_mod);
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y / release_jump_vel_modifier);
         }
 
         //Gravity Change
@@ -230,6 +242,27 @@ public class Movement : MonoBehaviour
         );
 
         return hit != null;
+    }
+
+    private void CoyoteTimer()
+    {
+        Debug.Log(coyote_time_remaining);
+
+        if (!IsGrounded() && Math.Abs(rb.velocity.y) > 0f)
+        {
+            coyote_time_remaining -= Time.deltaTime;
+        }
+
+        if (!IsGrounded())
+        {
+            if (coyote_time_remaining <= 0f)
+                can_coyote_jump = false;
+        }
+        else
+        {
+            coyote_time_remaining = coyote_time;
+            can_coyote_jump = true;
+        }
     }
 
     private void OnDrawGizmos()
