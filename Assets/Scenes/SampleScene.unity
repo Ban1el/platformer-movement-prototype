@@ -278,7 +278,7 @@ Transform:
   m_GameObject: {fileID: 317438094}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -16.21, y: 2.05, z: 0}
+  m_LocalPosition: {x: -13.71, y: 2.05, z: 0}
   m_LocalScale: {x: 1, y: 15.7966585, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -408,7 +408,7 @@ Transform:
   m_GameObject: {fileID: 339805249}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.05, y: -3.12, z: 0}
+  m_LocalPosition: {x: 8.95, y: -3.25, z: 0}
   m_LocalScale: {x: 5.2509403, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -921,7 +921,7 @@ Transform:
   m_GameObject: {fileID: 1282136022}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16.18, y: 2.0828, z: 0}
+  m_LocalPosition: {x: 13.68, y: 2.0828, z: 0}
   m_LocalScale: {x: 1, y: 15.82484, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1008,7 +1008,7 @@ Transform:
   m_GameObject: {fileID: 1365282484}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.1, y: -4.911, z: 0}
+  m_LocalPosition: {x: -10.94, y: -4.88, z: 0}
   m_LocalScale: {x: 1, y: 1.7937499, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1066,7 +1066,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
-  m_GravityScale: 2.5
+  m_GravityScale: 3
   m_Material: {fileID: 6200000, guid: 93bddf9426fb83e46a8c031a1c1e02b8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
@@ -1090,27 +1090,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab79e82c49b0fc9489153e944851d0b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movement_speed: 9
-  acceleration: 13
-  deceleration: 16
-  friction_amount: 0.22
-  jump_force: 13
-  jump_start_time: 0.25
-  fall_multiplier: 2
+  playerData: {fileID: 11400000, guid: f97891a7c140dac47afec2357bf45480, type: 2}
   ground_check: {fileID: 311464564}
-  ground_check_radius: 0.1
-  ground_layer:
-    serializedVersion: 2
-    m_Bits: 8
-  coyote_time: 0.2
-  release_jump_vel_modifier: 2
   wall_check: {fileID: 1231508467}
-  wall_check_radius: 0.1
-  wall_layer:
-    serializedVersion: 2
-    m_Bits: 64
-  wall_climb_speed: 5
-  slide_speed: 7
 --- !u!1 &1828062981
 GameObject:
   m_ObjectHideFlags: 0

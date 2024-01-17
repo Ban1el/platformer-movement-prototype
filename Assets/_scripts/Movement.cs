@@ -1,77 +1,27 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine;
 
 public class Movement : MonoBehaviour
 {
+    [SerializeField]
+    private PlayerData playerData;
     private Rigidbody2D rb;
-
-    [Header("Movement Settings")]
-    [SerializeField]
-    private float movement_speed = 7f;
-
-    [SerializeField]
-    private float acceleration;
-
-    [SerializeField]
-    private float deceleration;
-
-    [SerializeField]
-    private float friction_amount;
     private float horizontal_movement;
     private bool is_facing_right = true;
 
-    [Header("Jump Settings")]
-    [SerializeField]
-    private float jump_force;
-
-    [SerializeField]
-    private float jump_start_time;
-
-    [SerializeField]
-    private float fall_multiplier = 2.5f;
-
     [SerializeField]
     private Transform ground_check;
-
-    [SerializeField]
-    private float ground_check_radius;
-
-    [SerializeField]
-    private LayerMask ground_layer;
     private float default_gravity_scale;
     private bool is_jumping = false;
-
-    [SerializeField]
-    private float coyote_time = 1f;
     private float coyote_time_remaining;
     private bool can_coyote_jump = false;
-    private float hang_time = 1f;
+    private float hang_timer;
+    private bool hang_time_active = false;
+    private bool can_move_horizontally = true;
 
-    //Set this value larger than 1 for smoother transition
-
-    [SerializeField]
-    private float release_jump_vel_modifier = 2f;
-
-    [Header("Wall Settings")]
     [SerializeField]
     private Transform wall_check;
-
-    [SerializeField]
-    private float wall_check_radius;
-
-    [SerializeField]
-    private LayerMask wall_layer;
-
-    [SerializeField]
-    private float wall_climb_speed = 3f;
-
-    [SerializeField]
-    private float slide_speed;
-
+    private bool wall_jumped = false;
     private bool is_climbing = false;
 
     private void Awake()
@@ -81,14 +31,16 @@ public class Movement : MonoBehaviour
 
     private void Start()
     {
-        coyote_time_remaining = coyote_time;
+        coyote_time_remaining = playerData.coyote_time;
         default_gravity_scale = rb.gravityScale;
+        hang_timer = playerData.hang_time;
     }
 
     private void FixedUpdate()
     {
-        wall_slide();
-        wall_climb();
+        WallSlide();
+        WallClimb();
+        WallJump();
         HorizontalMovement();
         ApplyFriction();
     }
@@ -96,29 +48,27 @@ public class Movement : MonoBehaviour
     private void Update()
     {
         Jump();
+        Falling();
+        // HangTime();
         CoyoteTimer();
-        HangTime();
         FlipPlayer();
     }
 
     private void HorizontalMovement()
     {
         horizontal_movement = Input.GetAxisRaw("Horizontal");
-        rb.AddForce(Vector2.right * (horizontal_movement * movement_speed));
-        Vector2 target_speed = new Vector2(horizontal_movement * movement_speed, rb.velocity.y);
-        rb.velocity = Vector2.Lerp(rb.velocity, target_speed, acceleration * Time.fixedDeltaTime);
 
-        if (Mathf.Approximately(movement_speed, 0f))
+        if (can_move_horizontally)
         {
-            Vector2 decelerationVector = new Vector2(-rb.velocity.x * deceleration, rb.velocity.y);
-            rb.velocity += decelerationVector * Time.fixedDeltaTime;
+            rb.AddForce(Vector2.right * (horizontal_movement * playerData.movement_speed));
+
+            AccelerateMovement();
+            DecelerateMovement();
         }
 
-        rb.velocity = new Vector2(
-            Mathf.Clamp(rb.velocity.x, -movement_speed, movement_speed),
-            rb.velocity.y
-        );
+        LimitMovementSpeed();
 
+        //Flip the player
         if (horizontal_movement > 0.1f)
         {
             is_facing_right = true;
@@ -128,6 +78,47 @@ public class Movement : MonoBehaviour
         {
             is_facing_right = false;
         }
+    }
+
+    private void AccelerateMovement()
+    {
+        Vector2 target_speed = new Vector2(
+            horizontal_movement * playerData.movement_speed,
+            rb.velocity.y
+        );
+
+        if (wall_jumped)
+        {
+            rb.velocity = Vector2.Lerp(rb.velocity, target_speed, .5f * Time.fixedDeltaTime);
+        }
+        else
+        {
+            rb.velocity = Vector2.Lerp(
+                rb.velocity,
+                target_speed,
+                playerData.acceleration * Time.fixedDeltaTime
+            );
+        }
+    }
+
+    private void DecelerateMovement()
+    {
+        if (Mathf.Approximately(playerData.movement_speed, 0f))
+        {
+            Vector2 decelerationVector = new Vector2(
+                -rb.velocity.x * playerData.deceleration,
+                rb.velocity.y
+            );
+            rb.velocity += decelerationVector * Time.fixedDeltaTime;
+        }
+    }
+
+    private void LimitMovementSpeed()
+    {
+        rb.velocity = new Vector2(
+            Mathf.Clamp(rb.velocity.x, -playerData.movement_speed, playerData.movement_speed),
+            rb.velocity.y
+        );
     }
 
     private void FlipPlayer()
@@ -146,7 +137,10 @@ public class Movement : MonoBehaviour
     {
         if (Mathf.Abs(horizontal_movement) < 0.01f)
         {
-            float amount = Mathf.Min(Mathf.Abs(rb.velocity.x), Mathf.Abs(friction_amount));
+            float amount = Mathf.Min(
+                Mathf.Abs(rb.velocity.x),
+                Mathf.Abs(playerData.friction_amount)
+            );
             amount *= Mathf.Sign(rb.velocity.x);
             rb.AddForce(Vector2.right * -amount, ForceMode2D.Impulse);
         }
@@ -154,30 +148,40 @@ public class Movement : MonoBehaviour
 
     private void Jump()
     {
-        if (
-            Input.GetKeyDown(KeyCode.Space) && IsGrounded()
-            || Input.GetKeyDown(KeyCode.Space) && can_coyote_jump
-        )
+        if (!is_climbing)
         {
-            can_coyote_jump = false;
-            rb.gravityScale = default_gravity_scale;
-            is_jumping = true;
-            rb.AddForce(Vector2.up * jump_force, ForceMode2D.Impulse);
-        }
+            if (
+                Input.GetKeyDown(KeyCode.Space) && IsGrounded()
+                || Input.GetKeyDown(KeyCode.Space) && can_coyote_jump
+            )
+            {
+                can_coyote_jump = false;
+                rb.gravityScale = default_gravity_scale;
+                is_jumping = true;
+                rb.AddForce(Vector2.up * playerData.jump_force, ForceMode2D.Impulse);
+            }
 
-        //Variable height jump
-        //To stop the player from jumping early
-        if (Input.GetKeyUp(KeyCode.Space) && is_jumping)
-        {
-            is_jumping = false;
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y / release_jump_vel_modifier);
+            //Variable height jump
+            //To stop the player from jumping early
+            if (Input.GetKeyUp(KeyCode.Space) && is_jumping)
+            {
+                is_jumping = false;
+                rb.velocity = new Vector2(
+                    rb.velocity.x,
+                    rb.velocity.y / playerData.release_jump_vel_modifier
+                );
+            }
         }
+    }
 
-        //Gravity Change
-        if (rb.velocity.y < 0)
+    private void Falling()
+    {
+        //Character is falling code
+        if (rb.velocity.y < 0 && !hang_time_active)
         {
+            wall_jumped = false;
             is_jumping = false;
-            rb.gravityScale = default_gravity_scale * fall_multiplier;
+            rb.gravityScale = default_gravity_scale * playerData.fall_multiplier;
         }
         else
         {
@@ -199,25 +203,37 @@ public class Movement : MonoBehaviour
         }
         else if (IsGrounded() && !is_jumping)
         {
-            coyote_time_remaining = coyote_time;
+            coyote_time_remaining = playerData.coyote_time;
             can_coyote_jump = true;
         }
     }
 
-    public void HangTime()
-    {
-        if (is_jumping && rb.velocity.y <= 0)
-        {
-            Debug.Log("start hangtime");
-        }
-    }
+    // public void HangTime()
+    // {
+    //     if (Mathf.Max(rb.velocity.y, 0) == 0 && jumped)
+    //     {
+    //         if (hang_timer < 0f)
+    //         {
+    //             hang_time_active = false;
+    //             hang_timer = hang_time;
+    //             jumped = false;
+    //         }
+    //         else
+    //         {
+    //             hang_timer -= Time.deltaTime;
+    //             hang_time_active = true;
+    //             rb.velocity = new Vector2(rb.velocity.x, 0);
+    //             rb.gravityScale = hang_time_gravity;
+    //         }
+    //     }
+    // }
 
     private bool IsGrounded()
     {
         Collider2D hit = Physics2D.OverlapCircle(
             ground_check.position,
-            ground_check_radius,
-            ground_layer
+            playerData.ground_check_radius,
+            playerData.ground_layer
         );
 
         return hit != null;
@@ -225,35 +241,55 @@ public class Movement : MonoBehaviour
 
     // Wall climb
 
-    private void wall_climb()
+    private void WallClimb()
     {
         if (Input.GetKeyDown(KeyCode.K) && WallDetected())
         {
             is_climbing = true;
-        }
-
-        if (Input.GetKey(KeyCode.K) && WallDetected())
-        {
+            can_move_horizontally = false;
             rb.gravityScale = 0;
-            rb.velocity = new Vector2(
-                rb.velocity.x,
-                Input.GetAxisRaw("Vertical") * wall_climb_speed
-            );
         }
 
-        if (Input.GetKeyUp(KeyCode.K))
+        if (Input.GetKeyUp(KeyCode.K) && is_climbing)
         {
             is_climbing = false;
             rb.gravityScale = default_gravity_scale;
         }
+
+        if (is_climbing)
+            WallMovement();
     }
 
-    private void wall_slide()
+    private void WallMovement()
     {
-        if (WallDetected() && !is_climbing)
+        if (is_climbing)
+        {
+            rb.velocity = new Vector2(
+                rb.velocity.x,
+                Input.GetAxisRaw("Vertical") * playerData.wall_climb_speed
+            );
+        }
+    }
+
+    private void WallJump()
+    {
+        if ((is_climbing || WallDetected()) && Input.GetKeyDown(KeyCode.Space))
+        {
+            is_climbing = false;
+            can_move_horizontally = true;
+            wall_jumped = true;
+            is_facing_right = !is_facing_right;
+            rb.gravityScale = default_gravity_scale;
+            rb.AddForce(new Vector2(1f, 2f) * playerData.wall_jump_force, ForceMode2D.Impulse);
+        }
+    }
+
+    private void WallSlide()
+    {
+        if (WallDetected() && !is_climbing && !IsGrounded())
         {
             rb.gravityScale = 0;
-            rb.velocity = new Vector2(rb.velocity.x, -slide_speed);
+            rb.velocity = new Vector2(rb.velocity.x, -playerData.slide_speed);
         }
 
         if (!WallDetected() && !is_climbing)
@@ -266,8 +302,8 @@ public class Movement : MonoBehaviour
     {
         Collider2D hit = Physics2D.OverlapCircle(
             wall_check.position,
-            wall_check_radius,
-            wall_layer
+            playerData.wall_check_radius,
+            playerData.wall_layer
         );
 
         return hit != null;
@@ -276,9 +312,9 @@ public class Movement : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(ground_check.position, ground_check_radius);
+        Gizmos.DrawWireSphere(ground_check.position, playerData.ground_check_radius);
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(wall_check.position, wall_check_radius);
+        Gizmos.DrawWireSphere(wall_check.position, playerData.wall_check_radius);
     }
 }
